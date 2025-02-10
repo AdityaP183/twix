@@ -1,19 +1,21 @@
 "use client";
 
-import Image from "next/image";
+import Image from "../secondary/image";
+import NextImage from "next/image";
 import { Card, CardContent, CardFooter } from "../ui/card";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { ImageIcon, MapPin, Smile, Trash2Icon } from "lucide-react";
-import React, { useState } from "react";
-import { shareAction } from "@/actions/post.action";
+import React, { useActionState, useEffect, useRef, useState } from "react";
 import ImageEditor from "./image-editor";
+import { useUser } from "@clerk/nextjs";
+import { addPost } from "@/actions/post.action";
 
 export default function AddPost() {
 	const [media, setMedia] = useState<File | null>(null);
 	const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
-	const [settings, setsettings] = useState<{
+	const [settings, setSettings] = useState<{
 		type: "original" | "wide" | "square";
 		sensitive: boolean;
 	}>({
@@ -28,31 +30,61 @@ export default function AddPost() {
 	};
 
 	const previewUrl = media ? URL.createObjectURL(media) : "";
+	const { user } = useUser();
+	const [state, formAction, isPending] = useActionState(addPost, {
+		success: false,
+		error: false,
+	});
+
+	const formRef = useRef<HTMLFormElement | null>(null);
+
+	useEffect(() => {
+		if (state.success) {
+			formRef.current?.reset();
+			setMedia(null);
+			setSettings({ type: "original", sensitive: false });
+		}
+	}, [state]);
 
 	return (
 		<form
-			action={(formData) => shareAction(formData, settings)}
+			ref={formRef}
+			action={formAction}
 			className="flex gap-3 p-2 rounded-none items-start"
 		>
 			<Image
-				src="/temp-images/user.jpg"
-				alt="logo"
-				width={40}
-				height={40}
+				src={user?.imageUrl}
+				alt="user logo"
+				w={40}
+				h={40}
 				className="rounded-full"
 			/>
 			<Card className="border-none flex-1">
 				<CardContent className="p-0 flex flex-col">
+					<input
+						type="text"
+						name="imgType"
+						value={settings.type}
+						hidden
+						readOnly
+					/>
+					<input
+						type="text"
+						name="isSensitive"
+						value={settings.sensitive ? "true" : "false"}
+						hidden
+						readOnly
+					/>
 					<Textarea
 						transparent
 						autoResize
-						name="content"
+						name="desc"
 						className="border-none text-wrap resize-none px-0"
 						placeholder="What's on your mind?"
 					/>
 					<div className="relative rounded-xl overflow-hidden">
 						{media?.type.includes("image") && previewUrl && (
-							<Image
+							<NextImage
 								src={previewUrl}
 								alt="logo"
 								width={600}
@@ -108,7 +140,7 @@ export default function AddPost() {
 							onClose={() => setIsEditorOpen(false)}
 							previewUrl={previewUrl}
 							settings={settings}
-							setSettings={setsettings}
+							setSettings={setSettings}
 						/>
 					)}
 				</CardContent>
@@ -117,19 +149,30 @@ export default function AddPost() {
 					<div className="flex items-center gap-3 *:cursor-pointer *:text-blue-600">
 						<input
 							type="file"
-							name="media"
-							id="media"
+							name="file"
+							id="file"
 							className="hidden"
 							accept="image/*,video/*"
 							onChange={handleMediaChange}
 						/>
-						<label htmlFor="media">
+						<label htmlFor="file">
 							<ImageIcon />
 						</label>
 						<Smile />
 						<MapPin />
 					</div>
-					<Button className="rounded-full font-semibold">Post</Button>
+					<Button
+						className="rounded-full font-semibold"
+						type="submit"
+						disabled={isPending}
+					>
+						{isPending ? "Posting..." : "Post"}
+					</Button>
+					{state.error && (
+						<span className="text-red-300 p-4">
+							Something went wrong!
+						</span>
+					)}
 				</CardFooter>
 			</Card>
 		</form>

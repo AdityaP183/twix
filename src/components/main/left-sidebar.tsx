@@ -1,5 +1,4 @@
 import {
-	Bell,
 	Compass,
 	Home,
 	MessageCircleMore,
@@ -7,12 +6,14 @@ import {
 	UserCircle2,
 	Users2Icon,
 } from "lucide-react";
-// import Image from "next/image";
 import Image from "../secondary/image";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import ThemeToggle from "../secondary/theme-toggle";
 import CustomIconTheme from "../secondary/custom-icon-theme";
+import Socket from "./socket";
+import NotificationIcon from "../secondary/notification-icon";
+import React from "react";
 
 const menuItems = [
 	{
@@ -26,12 +27,6 @@ const menuItems = [
 		label: "Explore",
 		link: "/",
 		icon: Compass,
-	},
-	{
-		id: 3,
-		label: "Notification",
-		link: "/",
-		icon: Bell,
 	},
 	{
 		id: 4,
@@ -109,18 +104,21 @@ export default function LeftSidebar() {
 				</Link>
 				{/* MENU LIST */}
 				<div className="flex flex-col gap-4">
-					{menuItems.map((item) => (
-						<Link
-							href={item.link}
-							className="py-2 rounded-full hover:bg-secondary flex items-center gap-4 w-fit px-3"
-							key={item.id}
-						>
-							<item.icon />
-							<span className="hidden 2xl:inline">
-								{item.label}
-							</span>
-						</Link>
+					{menuItems.map((item, i) => (
+						<React.Fragment key={item.id}>
+							{i === 2 && <NotificationIcon />}
+							<Link
+								href={item.link}
+								className="py-2 rounded-full hover:bg-secondary flex items-center gap-4 w-fit px-3"
+							>
+								<item.icon />
+								<span className="hidden 2xl:inline">
+									{item.label}
+								</span>
+							</Link>
+						</React.Fragment>
 					))}
+					<Socket />
 				</div>
 				{/* Post Button */}
 				<Link

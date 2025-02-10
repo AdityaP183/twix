@@ -4,7 +4,8 @@ const urlEndpoint = process.env.NEXT_PUBLIC_URL_ENDPOINT;
 import { IKImage } from "imagekitio-next";
 
 interface ImageProps {
-	path: string;
+	path?: string;
+	src?: string;
 	w?: number;
 	h?: number;
 	alt: string;
@@ -12,11 +13,20 @@ interface ImageProps {
 	tr?: boolean;
 }
 
-export default function Image({ path, alt, className, w, h, tr }: ImageProps) {
+export default function Image({
+	path,
+	src,
+	alt,
+	className,
+	w,
+	h,
+	tr,
+}: ImageProps) {
 	return (
 		<IKImage
 			urlEndpoint={urlEndpoint}
 			path={path}
+			src={src}
 			{...(tr
 				? {
 						transformation: [

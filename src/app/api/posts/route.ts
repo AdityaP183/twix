@@ -1,38 +1,40 @@
-import { auth } from "@clerk/nextjs/server";
-import Post from "../secondary/post";
 import { prisma } from "@/lib/prisma";
-import InfiniteFeed from "./infinite-feed";
+import { auth } from "@clerk/nextjs/server";
+import { NextRequest } from "next/server";
 
-export default async function Feed({
-	userProfileId,
-}: {
-	userProfileId?: string;
-}) {
+export async function GET(request: NextRequest) {
+	const searchParams = request.nextUrl.searchParams;
+	const userProfileId = searchParams.get("user");
+	const page = searchParams.get("cursor");
+	const LIMIT = 3;
+
 	const { userId } = await auth();
 
 	if (!userId) return;
 
-	const conditionalFetching = userProfileId
-		? { userId: userProfileId, parentPostId: null }
-		: {
-				parentPostId: null,
-				userId: {
-					in: [
-						userId,
-						...(
-							await prisma.follow.findMany({
-								where: {
-									followerId: userId,
-								},
-								select: { followingId: true },
-							})
-						).map((f) => f.followingId),
-					],
-				},
-		  };
+	const conditionalFetching =
+		userProfileId !== "undefined"
+			? { userId: userProfileId as string, parentPostId: null }
+			: {
+					parentPostId: null,
+					userId: {
+						in: [
+							userId,
+							...(
+								await prisma.follow.findMany({
+									where: {
+										followerId: userId,
+									},
+									select: { followingId: true },
+								})
+							).map((f) => f.followingId),
+						],
+					},
+			  };
 
 	const posts = await prisma.post.findMany({
 		where: conditionalFetching,
+		take: LIMIT,
 		include: {
 			user: {
 				select: {
@@ -86,17 +88,13 @@ export default async function Feed({
 			rePosts: { where: { userId: userId }, select: { id: true } },
 			saves: { where: { userId: userId }, select: { id: true } },
 		},
-		take: 3,
-		skip: 0,
+		skip: (Number(page) - 1) * LIMIT,
 		orderBy: { createdAt: "desc" },
 	});
 
-	return (
-		<div>
-			{posts.map((post) => (
-				<Post key={post.id} post={post} />
-			))}
-			<InfiniteFeed userProfileId={userProfileId} />
-		</div>
-	);
+	const totalPosts = await prisma.post.count({ where: conditionalFetching });
+
+	const hasMore = Number(page) * LIMIT < totalPosts;
+
+	return Response.json({ posts, hasMore });
 }

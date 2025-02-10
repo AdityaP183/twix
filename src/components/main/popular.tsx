@@ -25,22 +25,12 @@ const trendingTopics = [
 		topic: "Climate Change Actions",
 		totalPosts: "2K",
 	},
-	{
-		title: "Trending - Entertainment",
-		topic: "Upcoming Movie Releases",
-		totalPosts: "540",
-	},
-	{
-		title: "Trending - Sports",
-		topic: "Championship Highlights",
-		totalPosts: "980",
-	},
 ];
 
 export default function Popular() {
 	return (
 		<Card>
-			<CardHeader className="p-4">
+			<CardHeader className="px-4 py-2">
 				<CardTitle className="text-xl font-semibold">
 					{"What's"} Happening?
 				</CardTitle>
@@ -87,7 +77,7 @@ export default function Popular() {
 					))}
 				</div>
 			</CardContent>
-			<CardFooter className="p-4">
+			<CardFooter className="px-4 py-2">
 				<Button
 					size="sm"
 					variant="link"
